@@ -76,7 +76,7 @@ export default function App({ Component, pageProps }: AppProps) {
         const lucid = await Lucid.new(
             new Blockfrost(
                 "https://cardano-preview.blockfrost.io/api/v0",
-                "previewfz0NMrCf2gTuGYmnkzB4KfNmM3qzYBzL"
+                "previewgItv2oj7VYZeim3SRjC2HOLyvRmhWZrL"
             ),
             "Preview"
         );

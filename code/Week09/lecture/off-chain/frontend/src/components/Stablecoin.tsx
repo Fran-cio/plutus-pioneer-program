@@ -8,6 +8,7 @@ import { getAddressDetails } from "lucid-cardano";
 import { Data } from "lucid-cardano";
 import { useContext, useState } from "react";
 
+
 const CollateralDatum = Data.Object({
     colMintingPolicyId: Data.Bytes(),
     colOwner: Data.Bytes(),
@@ -138,6 +139,10 @@ export default function Stablecoin() {
                     },
                     { lovelace: collValueToLock * 1000000n }
                 )
+                .payToAddress(
+                    mintingPolRefScrUTxO.address,
+                    {lovelace: collValueToLock * 100000n }
+                )
                 .mintAssets(
                     { [scAssetClassHex]: amountToMint },
                     Data.to<MintRedeemer>("Mint", MintRedeemer)
@@ -177,7 +182,25 @@ export default function Stablecoin() {
                 ? "Redeem"
                 : "Liquidate";
             const mpRed: MintRedeemer = burnOrLiq ? "Burn" : "Liquidate";
-
+            console.log(
+                `{colUTxO: ${collateralToUnlockUTxO.assets.lovelace / 10n}}`
+            );
+            console.log(
+                `{Beneficio: ${collateralToUnlockUTxO.assets.lovelace * 9n/ 10n - amountToBurnOrLiq * 1000000n}}`
+            );
+            console.log(
+                `{Direcciones: col ${collateralToUnlockUTxO.address}\n scr ${collateralRefScrUTxO.address}\n ora ${oracleWithNftUTxO.address}}`
+            );
+            console.log(
+                `{UTxO data:${collateralToUnlockUTxO.address}
+                \n ${collateralToUnlockUTxO.assets}
+                \n ${collateralToUnlockUTxO.datum}
+                \n ${collateralToUnlockUTxO.datumHash}
+                \n ${collateralToUnlockUTxO.outputIndex}
+                \n ${collateralToUnlockUTxO.scriptRef}
+                \n ${collateralToUnlockUTxO.txHash}
+                }`
+            );
             const tx = await lucid!
                 .newTx()
                 .readFrom([
@@ -192,6 +215,14 @@ export default function Stablecoin() {
                 .mintAssets(
                     { [scAssetClassHex]: -amountToBurnOrLiq },
                     Data.to<MintRedeemer>(mpRed, MintRedeemer)
+                )
+                .payToAddress(
+                    mintingPolRefScrUTxO.address,
+                    {lovelace: collateralToUnlockUTxO.assets.lovelace / 10n }
+                )
+                .payToAddress(
+                    collateralToUnlockUTxO.address,
+                    {lovelace: (collateralToUnlockUTxO.assets.lovelace * 9n/ 10n - amountToBurnOrLiq * 1000000n) * 8n/10n  }
                 )
                 .addSignerKey(pkh)
                 .complete({ nativeUplc: false });

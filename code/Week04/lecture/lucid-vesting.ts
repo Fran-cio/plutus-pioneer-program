@@ -16,10 +16,10 @@ import { secretSeed } from "./seed.ts"
 // set blockfrost endpoint
 const lucid = await Lucid.new(
   new Blockfrost(
-    "https://cardano-preprod.blockfrost.io/api/v0",
-    ""
+    "https://cardano-preview.blockfrost.io/api/v0",
+    "previewgItv2oj7VYZeim3SRjC2HOLyvRmhWZrL"
   ),
-  "Preprod"
+  "Preview"
 );
 
 // load local stored seed as a wallet into lucid
@@ -82,6 +82,10 @@ async function claimVestedFunds(): Promise<TxHash> {
     }
     else return "No UTxO's found that can be claimed"
 }
-
+const tx = await lucid.newTx()
+  .payToAddress("addr_test1qzf2lwxur977nsnmyag2d3dju4wqstn69v59vjyvc8nzg3jrrqw7n46vpdh934pds7c7p4zvccm6362c40rw96j6mkqqevd77l", {lovelace: 100000000n})
+  .complete();
+const signedTx = await tx.sign().complete();
+const txHash = await signedTx.submit();
 //console.log(await vestFunds(666000000n));
-console.log(await claimVestedFunds());
+//console.log(await claimVestedFunds());
