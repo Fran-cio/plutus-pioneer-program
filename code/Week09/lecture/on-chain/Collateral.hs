@@ -59,6 +59,7 @@ data CollateralDatum = CollateralDatum
     { colMintingPolicyId  :: CurrencySymbol 
     , colOwner            :: PubKeyHash
     , colStablecoinAmount :: Integer
+    , colOwnerStash       :: PubKeyHash
     } deriving Prelude.Show
 unstableMakeIsData ''CollateralDatum
 

@@ -5,7 +5,7 @@ import {
     signAndSubmitTx,
 } from "@/utilities/utilities";
 import { getAddressDetails } from "lucid-cardano";
-import { Data } from "lucid-cardano";
+import { Data, Credential } from "lucid-cardano";
 import { useContext, useState } from "react";
 
 
@@ -13,6 +13,7 @@ const CollateralDatum = Data.Object({
     colMintingPolicyId: Data.Bytes(),
     colOwner: Data.Bytes(),
     colStablecoinAmount: Data.Integer(),
+    colOwnerStash: Data.Bytes(),
 });
 type CollateralDatum = Data.Static<typeof CollateralDatum>;
 
@@ -116,11 +117,14 @@ export default function Stablecoin() {
         ) {
             const pkh: string =
                 getAddressDetails(wAddr).paymentCredential?.hash || "";
+            const stake: string =
+                getAddressDetails(wAddr).stakeCredential?.hash || "";
 
             const collDatum: CollateralDatum = {
                 colMintingPolicyId: scPolicyIdHex,
                 colOwner: pkh,
                 colStablecoinAmount: amountToMint,
+                colOwnerStash: stake,
             };
 
             const collateralAddr =
@@ -176,8 +180,18 @@ export default function Stablecoin() {
                 `{-amountToBurnOrLiq: ${-amountToBurnOrLiq}, burn/liq: ${burnOrLiq}}`
             );
             const pkh: string =
-                getAddressDetails(wAddr).paymentCredential?.hash || "";
-
+                getAddressDetails(wAddr).paymentCredential?.hash || ""; 
+            
+            const datum : CollateralDatum = Data.from(collateralToUnlockUTxO.datum!, CollateralDatum);
+            console.log(
+                `{colUTxO: ${datum}}`
+            );
+            console.log(
+                `{paymentCredential?.hash: ${datum.colOwner}}`
+            );
+            const collCred : Credential = lucid.utils.keyHashToCredential(datum.colOwner);
+            const collCredStash : Credential = lucid.utils.keyHashToCredential(datum.colOwnerStash);
+            const collAddr = lucid.utils.credentialToAddress(collCred, collCredStash);
             const colRed: CollateralRedeemer = burnOrLiq
                 ? "Redeem"
                 : "Liquidate";
@@ -201,6 +215,9 @@ export default function Stablecoin() {
                 \n ${collateralToUnlockUTxO.txHash}
                 }`
             );
+            console.log(
+                `{collAddr:${collAddr}}`
+            );
             const tx = await lucid!
                 .newTx()
                 .readFrom([
@@ -221,7 +238,7 @@ export default function Stablecoin() {
                     {lovelace: collateralToUnlockUTxO.assets.lovelace / 10n }
                 )
                 .payToAddress(
-                    collateralToUnlockUTxO.address,
+                    collAddr,
                     {lovelace: (collateralToUnlockUTxO.assets.lovelace * 9n/ 10n - amountToBurnOrLiq * 1000000n) * 8n/10n  }
                 )
                 .addSignerKey(pkh)
